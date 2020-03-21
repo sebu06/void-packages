@@ -1,16 +1,15 @@
 # Template file for 'samba'
 pkgname=samba
-version=3.6.25
-revision=14
-build_wrksrc=source3
+version=4.12.0
+revision=1
 build_style=gnu-configure
-configure_args="--with-fhs --with-pam --with-pam_smbpass --with-ldap
- --with-configdir=/etc/samba --with-lockdir=/var/samba --with-static-libs=libtevent
- --with-cachedir=/var/samba --with-nmbdsocketdir=/run/samba/socket
+configure_args="--enable-fhs --with-pam  --with-ldap
+ --with-configdir=/etc/samba --with-lockdir=/var/samba 
+ --with-cachedir=/var/samba --with-sockets-dir=/run/samba/socket
  --with-statedir=/var/samba --with-piddir=/run/samba --with-dnsupdate
- --with-pammodulesdir=/usr/lib/security --with-automount --disable-swat
- --with-syslog --enable-external-libtalloc --with-quotas --enable-cups
- --enable-external-libtdb --disable-fam --with-ads --with-acl-support
+ --with-pammodulesdir=/usr/lib/security --with-automount 
+ --with-syslog  --with-quotas --enable-cups 
+  --without-fam --with-ads --with-acl-support
  --with-shared-modules=idmap_ad,idmap_adex,idmap_rid,idmap_hash,idmap_tdb2
  --sbindir=/usr/bin"
 short_desc="SMB/CIFS file, print, and login server for Unix"
@@ -18,18 +17,17 @@ maintainer="Orphaned <orphan@voidlinux.org>"
 license="GPL-3"
 homepage="http://www.samba.org"
 distfiles="http://us1.samba.org/samba/ftp/stable/$pkgname-$version.tar.gz"
-checksum=8f2c8a7f2bd89b0dfd228ed917815852f7c625b2bc0936304ac3ed63aaf83751
-
+checksum=6ec0b70a567d3c3f4dd3cf2a90b515dcef03a3804b00abb5896eba382d9665fe
+#--with-static-libs=libtevent --disable-swat --enable-external-libtalloc --enable-external-libtdb  Quotas?
 lib32disabled=yes
 conf_files="/etc/pam.d/samba /etc/samba/smb.conf"
 make_dirs="/etc/samba/private 0750 root root"
-hostmakedepends="pkg-config perl python-devel"
+hostmakedepends="pkg-config perl python3-devel"
 makedepends="readline-devel libcap-devel popt-devel e2fsprogs-devel mit-krb5-devel
- libldap-devel pam-devel acl-devel avahi-libs-devel tdb-devel talloc-devel cups-devel"
+ libldap-devel pam-devel acl-devel avahi-libs-devel tdb-devel talloc-devel cups-devel
+ lmdb-devel gnutls-devel gpgme-devel perl-Parse-Yapp jansson-devel libarchive-devel"
 
 do_configure() {
-	sed -e 's,XFS_QUOTA_,FS_QUOTA_,g' -i lib/sysquotas_xfs.c
-
 	if [ "$CROSS_BUILD" ]; then
 		configure_args+=" samba_cv_CC_NEGATIVE_ENUM_VALUES=yes
 			libreplace_cv_HAVE_GETADDRINFO=no
@@ -41,7 +39,7 @@ do_configure() {
 			smb_krb5_cv_enctype_to_string_takes_krb5_context_arg=yes"
 	fi
 	# Disable quotas, broken with musl (needs rpc).
-	./configure ${configure_args} --without-quotas
+	./configure ${configure_args}
 }
 post_install() {
 	cd ${wrksrc}
@@ -58,14 +56,14 @@ post_install() {
 		${DESTDIR}/etc/samba/smb.conf
 
 	# nsswitch libraries
-	vinstall nsswitch/libnss_wins.so 755 usr/lib
+	vinstall bin/default/nsswitch/libnss_wins.so 755 usr/lib
 	ln -s libnss_wins.so ${DESTDIR}/usr/lib/libnss_wins.so.2
 
-	vinstall nsswitch/libnss_winbind.so 755 usr/lib
+	vinstall bin/default/nsswitch/libnss_winbind.so 755 usr/lib
 	ln -s libnss_winbind.so ${DESTDIR}/usr/lib/libnss_winbind.so.2
 
 	# winbind krb5 locator
-	vinstall source3/bin/winbind_krb5_locator.so 755 \
+	vinstall bin/shared/winbind_krb5_locator.so 755 \
 		usr/lib/krb5/plugins/libkrb5
 
 	# Remove unused manpages
@@ -82,6 +80,7 @@ post_install() {
 
 	# Install pkg-config files.
 	vmkdir usr/lib/pkgconfig
+
 	install -m644 source3/pkgconfig/*.pc ${DESTDIR}/usr/lib/pkgconfig
 
 	# Link cups backend
@@ -92,7 +91,7 @@ post_install() {
 smbclient_package() {
 	short_desc="Command-line SMB/CIFS clients for Unix"
 	pkg_install() {
-		vmove usr/share/man/man1
+		#vmove usr/share/man/man1
 
 		# Determine which binaries are client and which are server
 		# by looking at manpage suffix, and vmove the client
@@ -110,7 +109,7 @@ libsmbclient_package() {
 	pkg_install() {
 		vmove "usr/lib/libwbclient.so.*"
 		vmove "usr/lib/libsmbclient.so.*"
-		vmove usr/share/man/man7/libsmbclient.7
+		#vmove usr/share/man/man7/libsmbclient.7
 	}
 }
 samba-devel_package() {
