@@ -1,0 +1,28 @@
+# Template file for 'xrdp'
+pkgname=xrdp
+version=0.9.13
+revision=1
+wrksrc="xrdp-${version}"
+build_style=configure
+configure_args="--prefix=/usr --sbindir=/usr/bin"
+make_check_target=test
+#conf_files="/etc/neomuttrc"
+makedepends="pkg-config libressl-devel pam-devel libXfixes-devel libXrandr-devel nasm xorg-server-devel"
+short_desc="Server for the Remote Desktop Protocol (RDP)"
+maintainer="Sebastian Uharek <sebastian@prebtec.de>"
+license="Apache2"
+homepage="http://www.xrdp.org/"
+distfiles="https://github.com/neutrinolabs/xrdp/releases/download/v${version}/xrdp-${version}.tar.gz"
+checksum=59fe6f32f17e7b86c132e069ee96b754f0555b1197e44e4d070e85591d0271ff
+
+xrdp-devel_package() {
+    depends="${sourcepkg}-${version}_${revision}"
+    pkg_install() {
+        vmove usr/include
+        vmove "usr/lib/*.so"
+    }
+}
+
+post_install() {
+	vsv xrdp
+}
